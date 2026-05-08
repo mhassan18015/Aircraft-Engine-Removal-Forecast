@@ -1,0 +1,40 @@
+{
+  "n_engines": 48,
+  "n_events": 13,
+  "n_censored": 35,
+  "policy_cycle": 5000,
+  "concordance_index": 0.6382978723404256,
+  "log_likelihood": -25.356920430889687,
+  "covariates_used": [
+    "egt_probe_average_slope",
+    "fuel_flw_slope",
+    "core_spd_slope"
+  ],
+  "hazard_ratios": {
+    "egt_probe_average_slope": {
+      "exp_coef": 0.9935297674573643,
+      "lower_95": 0.7599075713801088,
+      "upper_95": 1.2989756070348881,
+      "p_value": 0.9621461445935544
+    },
+    "fuel_flw_slope": {
+      "exp_coef": 1.0131249517715601,
+      "lower_95": 0.768103674593232,
+      "upper_95": 1.33630680577813,
+      "p_value": 0.9264540447057091
+    },
+    "core_spd_slope": {
+      "exp_coef": 0.9704482638416501,
+      "lower_95": 0.7357682224433892,
+      "upper_95": 1.2799816627929095,
+      "p_value": 0.8318176263947212
+    }
+  },
+  "kaplan_meier_overall": {
+    "S_1500": 1.0,
+    "S_2500": 1.0,
+    "S_3500": 1.0,
+    "S_4500": 0.8928571428571428,
+    "S_4999": 0.8290816326530613
+  }
+}

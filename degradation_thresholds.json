@@ -1,0 +1,51 @@
+{
+  "window_size": 40,
+  "sensors": {
+    "egt_probe_average": {
+      "sign": 1,
+      "n_windows": 54146,
+      "p25_signed": -0.3475998590227418,
+      "p50_signed": 0.8925522128768012,
+      "p75_signed": 3.17936698607721,
+      "p90_signed": 8.747505106336916,
+      "raw_slope_mean": 2.050170796396249,
+      "raw_slope_std": 5.064914263534026
+    },
+    "fuel_flw": {
+      "sign": 1,
+      "n_windows": 54185,
+      "p25_signed": -7.090225563909504,
+      "p50_signed": 9.786150712836454,
+      "p75_signed": 44.227722772271306,
+      "p90_signed": 116.71440317693627,
+      "raw_slope_mean": 29.169038086813543,
+      "raw_slope_std": 72.8024823225945
+    },
+    "core_spd": {
+      "sign": -1,
+      "n_windows": 54291,
+      "p25_signed": -0.14549987641873097,
+      "p50_signed": -0.03282178217821741,
+      "p75_signed": 0.03157706766917347,
+      "p90_signed": 0.13972640330937164,
+      "raw_slope_mean": 0.07418202518187596,
+      "raw_slope_std": 0.24863447151247609
+    },
+    "oil_pres": {
+      "sign": -1,
+      "n_windows": 54340,
+      "p25_signed": -0.26588334451296947,
+      "p50_signed": -0.06982668824151356,
+      "p75_signed": 0.07165413533835355,
+      "p90_signed": 0.25357392925343364,
+      "raw_slope_mean": 0.13622669059191264,
+      "raw_slope_std": 0.4421008566918944
+    }
+  },
+  "interpretation": {
+    "stable": "signed slope below p50 (median fleet behaviour)",
+    "mild": "p50 to p75 (slightly faster than typical degradation)",
+    "elevated": "p75 to p90 (top quartile of degradation rate)",
+    "severe": "above p90 (top 10% of degradation rate fleet-wide)"
+  }
+}

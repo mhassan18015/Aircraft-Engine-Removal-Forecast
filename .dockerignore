@@ -1,0 +1,51 @@
+# Local virtualenvs - never bundle into the image.
+.venv*/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# IDE / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Git history - the runtime image doesn't need it.
+.git/
+.gitignore
+
+# Local pytest / mlflow caches.
+.pytest_cache/
+mlruns/
+mlartifacts/
+last_train_run.json
+
+# Notebooks themselves are NOT needed at runtime; train_pipeline.py only
+# reads them when retraining (which the DAG triggers, not the inference image).
+# Comment out the next line if you want a single image that can both serve
+# and retrain.
+*.ipynb
+*.ipynb.prev
+
+# Raw and intermediate data - the inference container only needs the cleaned
+# CSV when re-training. For the pure inference image, exclude all data.
+Data/A320NEOMSRMSC_masked.csv
+Data/2743605_A320NEOMSRMSC.csv
+Data/LEAP_Engine_Data_Masked_Final_no_outliers.csv
+
+# Frontend assets that don't ship with the API container.
+aircraft engine.jpg
+"prediction tool.url"
+"Run local host.bat"
+*.docx
+*.png
+
+# Archived legacy notebooks and tree-ensemble .pkl files - never deploy these.
+archive/
+
+# Logs accumulated during development
+*.log
+predictions.log
+
+# Helper scripts created during the merge sessions (ignored if any remain)
+_*.py

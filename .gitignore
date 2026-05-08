@@ -1,0 +1,87 @@
+# =============================================================================
+# A320NEO Engine Removal Forecast — .gitignore
+# =============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- Virtual environments ---
+.venv/
+.venv-*/
+venv/
+env/
+ENV/
+
+# --- IDE / editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- Office lock / backup files ---
+~$*
+*.bak
+*.prev
+*.tmp
+
+# --- Data files (too large for git; document how to obtain in README) ---
+Data/*.csv
+Data/_local/
+
+# --- Trained model artifacts (large binaries) ---
+*.keras
+*.h5
+*.pkl
+*.onnx
+*.pb
+best_lstm2_model/
+best_lstm2_model_all/
+best_lstm2_model*/
+
+# --- Production artifacts that DO ship with the repo (override above) ---
+!best_lstm2_model.keras
+!best_gru_model.keras
+!best_cnn_model.keras
+!best_lstm2_model_all.keras
+!degradation_rf.pkl
+
+# --- Generated reports / logs ---
+*.log
+predictions.log
+logs.log
+data_drift_report.html
+metrics.txt
+last_train_run.json
+predictions_buffer.parquet
+
+# --- MLflow runtime artifacts ---
+mlruns/*/[0-9a-f]*/
+mlartifacts/
+
+# --- Old/redundant presentation versions (keep only canonical + latest) ---
+A320NEO_ERF_RCL_Presentation_v[0-9].pptx
+A320NEO_ERF_RCL_Presentation_v[0-9][0-9].pptx
+
+# --- Sample inputs (regeneratable) ---
+sample_input_*.csv
+_cell*_out.png
+
+# --- OS junk ---
+desktop.ini

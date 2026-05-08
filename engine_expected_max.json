@@ -1,0 +1,296 @@
+{
+  "ESN1": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN10": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN11": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN12": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN13": {
+    "expected_max_cycle": 4562.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "off_wing"
+  },
+  "ESN14": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN15": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN16": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN17": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN18": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN19": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN2": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN20": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN21": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN22": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN23": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN24": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN25": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "off_wing_and_over_policy"
+  },
+  "ESN26": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN27": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN28": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN29": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN3": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN30": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN31": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN32": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN33": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN34": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN35": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN36": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN37": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN38": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN39": {
+    "expected_max_cycle": 3634.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": false,
+    "removal_reason": "off_wing"
+  },
+  "ESN4": {
+    "expected_max_cycle": 4209.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": false,
+    "removal_reason": "off_wing"
+  },
+  "ESN40": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN41": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN42": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN43": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN44": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": false,
+    "removal_reason": "off_wing_and_over_policy"
+  },
+  "ESN45": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN46": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN47": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN48": {
+    "expected_max_cycle": 3705.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": false,
+    "removal_reason": "off_wing"
+  },
+  "ESN49": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": false,
+    "removal_reason": "over_policy"
+  },
+  "ESN5": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN6": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN7": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN8": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26E1",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  },
+  "ESN9": {
+    "expected_max_cycle": 5000.0,
+    "eng_type": "LEAP-1A26",
+    "is_engine_active": true,
+    "removal_reason": "active"
+  }
+}

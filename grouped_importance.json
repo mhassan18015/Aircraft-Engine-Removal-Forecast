@@ -1,0 +1,353 @@
+{
+  "lstm": {
+    "base_mae": 210.58746337890625,
+    "raw_output_std": 2.9802322387695312e-08,
+    "raw_output_unique": 1,
+    "groups": [
+      {
+        "group": "raw_sensors",
+        "n_feats": 6,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      },
+      {
+        "group": "norm_sensors",
+        "n_feats": 6,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      },
+      {
+        "group": "engtype",
+        "n_feats": 2,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      },
+      {
+        "group": "time",
+        "n_feats": 4,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      },
+      {
+        "group": "phase",
+        "n_feats": 2,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      },
+      {
+        "group": "all_20",
+        "n_feats": 20,
+        "delta_mae": 0.0,
+        "perm_mae": 210.58746337890625
+      }
+    ],
+    "sensitivity": [
+      {
+        "feature": "egt_probe_average",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "fuel_flw",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "core_spd",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "oil_temp",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "oil_pres",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "egt_probe_average_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "fuel_flw_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "core_spd_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "oil_temp_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "oil_pres_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      },
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)_norm",
+        "delta_cycles": 0.0,
+        "min_scaled": 0.24920183420181274,
+        "max_scaled": 0.24920183420181274
+      }
+    ]
+  },
+  "gru": {
+    "base_mae": 844.1384887695312,
+    "raw_output_std": 0.12498656660318375,
+    "raw_output_unique": 4122,
+    "groups": [
+      {
+        "group": "raw_sensors",
+        "n_feats": 6,
+        "delta_mae": 14.23773193359375,
+        "perm_mae": 858.376220703125
+      },
+      {
+        "group": "norm_sensors",
+        "n_feats": 6,
+        "delta_mae": 17.84576416015625,
+        "perm_mae": 861.9842529296875
+      },
+      {
+        "group": "engtype",
+        "n_feats": 2,
+        "delta_mae": -5.6737060546875,
+        "perm_mae": 838.4647827148438
+      },
+      {
+        "group": "time",
+        "n_feats": 4,
+        "delta_mae": 0.14508056640625,
+        "perm_mae": 844.2835693359375
+      },
+      {
+        "group": "phase",
+        "n_feats": 2,
+        "delta_mae": 17.06793212890625,
+        "perm_mae": 861.2064208984375
+      },
+      {
+        "group": "all_20",
+        "n_feats": 20,
+        "delta_mae": 2.72515869140625,
+        "perm_mae": 846.8636474609375
+      }
+    ],
+    "sensitivity": [
+      {
+        "feature": "core_spd",
+        "delta_cycles": 1154.927734375,
+        "min_scaled": 0.4393133223056793,
+        "max_scaled": 0.9143967032432556
+      },
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)_norm",
+        "delta_cycles": 1152.72998046875,
+        "min_scaled": 0.4387524425983429,
+        "max_scaled": 0.9129317998886108
+      },
+      {
+        "feature": "oil_pres_norm",
+        "delta_cycles": 1145.7760009765625,
+        "min_scaled": 0.44343870878219604,
+        "max_scaled": 0.914757490158081
+      },
+      {
+        "feature": "oil_pres",
+        "delta_cycles": 1144.4210205078125,
+        "min_scaled": 0.44409966468811035,
+        "max_scaled": 0.9148610830307007
+      },
+      {
+        "feature": "fuel_flw_norm",
+        "delta_cycles": 1142.99072265625,
+        "min_scaled": 0.443393349647522,
+        "max_scaled": 0.9135664105415344
+      },
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)",
+        "delta_cycles": 1134.869140625,
+        "min_scaled": 0.4402199387550354,
+        "max_scaled": 0.9070521593093872
+      },
+      {
+        "feature": "egt_probe_average",
+        "delta_cycles": 1134.5885009765625,
+        "min_scaled": 0.4381027817726135,
+        "max_scaled": 0.9048195481300354
+      },
+      {
+        "feature": "egt_probe_average_norm",
+        "delta_cycles": 1085.2200927734375,
+        "min_scaled": 0.4384961724281311,
+        "max_scaled": 0.8849050998687744
+      },
+      {
+        "feature": "fuel_flw",
+        "delta_cycles": 1080.392822265625,
+        "min_scaled": 0.4374711513519287,
+        "max_scaled": 0.8818943500518799
+      },
+      {
+        "feature": "oil_temp_norm",
+        "delta_cycles": 723.740478515625,
+        "min_scaled": 0.4397105276584625,
+        "max_scaled": 0.7374235987663269
+      },
+      {
+        "feature": "core_spd_norm",
+        "delta_cycles": 686.1671142578125,
+        "min_scaled": 0.44882333278656006,
+        "max_scaled": 0.7310804724693298
+      },
+      {
+        "feature": "oil_temp",
+        "delta_cycles": 626.7636108398438,
+        "min_scaled": 0.4430360198020935,
+        "max_scaled": 0.7008573412895203
+      }
+    ]
+  },
+  "cnn": {
+    "base_mae": 875.146240234375,
+    "raw_output_std": 0.1081712543964386,
+    "raw_output_unique": 1693,
+    "groups": [
+      {
+        "group": "raw_sensors",
+        "n_feats": 6,
+        "delta_mae": -3.26220703125,
+        "perm_mae": 871.884033203125
+      },
+      {
+        "group": "norm_sensors",
+        "n_feats": 6,
+        "delta_mae": 0.12371826171875,
+        "perm_mae": 875.2699584960938
+      },
+      {
+        "group": "engtype",
+        "n_feats": 2,
+        "delta_mae": -2.85894775390625,
+        "perm_mae": 872.2872924804688
+      },
+      {
+        "group": "time",
+        "n_feats": 4,
+        "delta_mae": -0.21551513671875,
+        "perm_mae": 874.9307250976562
+      },
+      {
+        "group": "phase",
+        "n_feats": 2,
+        "delta_mae": -1.00567626953125,
+        "perm_mae": 874.1405639648438
+      },
+      {
+        "group": "all_20",
+        "n_feats": 20,
+        "delta_mae": -7.3524169921875,
+        "perm_mae": 867.7938232421875
+      }
+    ],
+    "sensitivity": [
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)",
+        "delta_cycles": 193.9357147216797,
+        "min_scaled": 0.6182768940925598,
+        "max_scaled": 0.6980530023574829
+      },
+      {
+        "feature": "egt_probe_average_norm",
+        "delta_cycles": 134.10145568847656,
+        "min_scaled": 0.6100524067878723,
+        "max_scaled": 0.6652154922485352
+      },
+      {
+        "feature": "egt_probe_average",
+        "delta_cycles": 129.38804626464844,
+        "min_scaled": 0.6140605211257935,
+        "max_scaled": 0.6672847270965576
+      },
+      {
+        "feature": "fuel_flw",
+        "delta_cycles": 89.36190032958984,
+        "min_scaled": 0.6224778890609741,
+        "max_scaled": 0.6592372059822083
+      },
+      {
+        "feature": "pt2_(fan_inlet_tot_pres)_norm",
+        "delta_cycles": 67.95511627197266,
+        "min_scaled": 0.64073246717453,
+        "max_scaled": 0.668686032295227
+      },
+      {
+        "feature": "core_spd_norm",
+        "delta_cycles": 45.13557052612305,
+        "min_scaled": 0.6421273350715637,
+        "max_scaled": 0.6606940031051636
+      },
+      {
+        "feature": "fuel_flw_norm",
+        "delta_cycles": 42.398719787597656,
+        "min_scaled": 0.6408073306083679,
+        "max_scaled": 0.6582481861114502
+      },
+      {
+        "feature": "core_spd",
+        "delta_cycles": 35.72757339477539,
+        "min_scaled": 0.6450933814048767,
+        "max_scaled": 0.6597900390625
+      },
+      {
+        "feature": "oil_pres",
+        "delta_cycles": 22.4757022857666,
+        "min_scaled": 0.654011070728302,
+        "max_scaled": 0.6632565259933472
+      },
+      {
+        "feature": "oil_pres_norm",
+        "delta_cycles": 15.535624504089355,
+        "min_scaled": 0.6542103290557861,
+        "max_scaled": 0.6606009602546692
+      },
+      {
+        "feature": "oil_temp",
+        "delta_cycles": 2.110887050628662,
+        "min_scaled": 0.6541930437088013,
+        "max_scaled": 0.6550613641738892
+      },
+      {
+        "feature": "oil_temp_norm",
+        "delta_cycles": 1.9675819873809814,
+        "min_scaled": 0.6548973917961121,
+        "max_scaled": 0.6557067632675171
+      }
+    ]
+  }
+}

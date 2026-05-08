@@ -1,0 +1,10 @@
+{
+  "fleet_max_life": 5000.0,
+  "residual_min": 0.0,
+  "residual_max": 1065.0,
+  "n_train_engines": 38,
+  "n_train_rows": 456177,
+  "baseline_kind": "policy_threshold_5000",
+  "policy_removal_cycle": 5000,
+  "engine_expected_max_path": "engine_expected_max.json"
+}

@@ -1,0 +1,108 @@
+{
+  "baseline_mae": 210.58746337890625,
+  "n_test_samples": 21865,
+  "model": "best_lstm2_model.keras",
+  "method": "Permutation importance: shuffle one feature's timeseries across samples",
+  "ranked": [
+    {
+      "feature": "egt_probe_average",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "fuel_flw",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "core_spd",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "oil_temp",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "oil_pres",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "pt2_(fan_inlet_tot_pres)",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "egt_probe_average_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "fuel_flw_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "core_spd_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "oil_temp_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "oil_pres_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "pt2_(fan_inlet_tot_pres)_norm",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "engtype_LEAP-1A26",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "engtype_LEAP-1A26E1",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "month_sin",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "month_cos",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "dayofweek_sin",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "dayofweek_cos",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "flight_phase_CRUISE",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    },
+    {
+      "feature": "flight_phase_TAKEOFF",
+      "perm_mae": 210.58746337890625,
+      "delta_mae": 0.0
+    }
+  ]
+}

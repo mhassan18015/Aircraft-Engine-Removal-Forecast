@@ -1,0 +1,53 @@
+{
+  "model_kind": "RandomForestClassifier",
+  "n_estimators": 300,
+  "max_depth": 14,
+  "feature_columns": [
+    "egt_probe_average_slope",
+    "egt_probe_average_mean",
+    "egt_probe_average_std",
+    "fuel_flw_slope",
+    "fuel_flw_mean",
+    "fuel_flw_std",
+    "core_spd_slope",
+    "core_spd_mean",
+    "core_spd_std",
+    "oil_pres_slope",
+    "oil_pres_mean",
+    "oil_pres_std",
+    "latest_flight_cycle",
+    "engtype_a26",
+    "engtype_a26e1"
+  ],
+  "class_labels": [
+    "stable",
+    "mild",
+    "elevated",
+    "severe"
+  ],
+  "window_size": 40,
+  "n_train_samples": 53963,
+  "n_train_engines": 49,
+  "cv_accuracy_mean": 0.9988883455762002,
+  "cv_accuracy_std": 0.00020141660668338278,
+  "cv_macro_f1_mean": 0.9958274187542827,
+  "cv_macro_f1_std": 0.0015319399324548286,
+  "feature_importance": {
+    "core_spd_slope": 0.2553896636665926,
+    "egt_probe_average_slope": 0.22139570457981295,
+    "oil_pres_slope": 0.21611859540464165,
+    "fuel_flw_slope": 0.15084251301828774,
+    "core_spd_std": 0.034635004858098804,
+    "egt_probe_average_std": 0.031375517445386296,
+    "oil_pres_std": 0.01688993836726424,
+    "egt_probe_average_mean": 0.015261942876132903,
+    "fuel_flw_mean": 0.014703562854266355,
+    "fuel_flw_std": 0.013849672524610362,
+    "oil_pres_mean": 0.01181751498130654,
+    "latest_flight_cycle": 0.008360831736178005,
+    "core_spd_mean": 0.00821211378908023,
+    "engtype_a26e1": 0.0005919806828180637,
+    "engtype_a26": 0.0005554432155233354
+  },
+  "in_sample_accuracy": 1.0
+}

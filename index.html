@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Aircraft Engine Removal Forecast RCL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background: url('aircraft engine.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .container {
+            width: 90%;
+            max-width: 720px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.7rem;
+            margin: 0 0 8px;
+            color: #222;
+        }
+        h2 {
+            font-size: 1.05rem;
+            color: #444;
+            margin: 24px 0 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+        }
+        p.lede {
+            text-align: center;
+            color: #555;
+            margin: 0 0 20px;
+            font-size: 0.92rem;
+        }
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        input[type="file"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { border-color: #007BFF; outline: none; }
+        small { color: #777; font-size: 0.82rem; display: block; margin-top: 4px; }
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        .meta { background: #f7f8fa; padding: 12px 14px; border-radius: 6px; font-size: 0.88rem; color: #444; margin-top: 12px; }
+        .meta b { color: #222; }
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f0f7ff;
+            border-left: 4px solid #007BFF;
+            border-radius: 6px;
+            display: none;
+        }
+        .result.error { background: #fff0f0; border-left-color: #dc3545; }
+        .result.warn  { background: #fff8e6; border-left-color: #f0ad4e; }
+        .result h3 { margin: 0 0 6px; font-size: 1.1rem; color: #222; }
+        .result .rcl { font-size: 2.2rem; font-weight: bold; color: #007BFF; margin: 4px 0 8px; }
+        .result.warn .rcl, .result.error .rcl { color: #dc3545; }
+        .result .breakdown { font-size: 0.86rem; color: #555; line-height: 1.5; }
+        .health-bar { margin-top: 14px; }
+        .health-bar .track {
+            background-color: #e8e8e8;
+            border-radius: 6px;
+            overflow: hidden;
+            height: 18px;
+            position: relative;
+        }
+        .health-bar .fill {
+            background: linear-gradient(90deg, #dc3545, #f0ad4e 50%, #28a745);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .health-bar .marker {
+            margin-top: 4px;
+            font-size: 0.78rem;
+            color: #777;
+            display: flex;
+            justify-content: space-between;
+        }
+        details { margin-top: 18px; font-size: 0.88rem; }
+        details summary { cursor: pointer; color: #007BFF; }
+        pre { background: #2d2d2d; color: #ddd; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; }
+        .pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #e8f3ff;
+            color: #007BFF;
+            margin-left: 6px;
+        }
+        .pill.ok { background: #e6f6ec; color: #28a745; }
+        .pill.warn { background: #fff3d6; color: #b8860b; }
+        .pill.bad { background: #fde8ea; color: #dc3545; }
+
+        .degradation {
+            margin-top: 18px;
+            padding: 16px;
+            background: #fffbf0;
+            border-left: 4px solid #f0ad4e;
+            border-radius: 6px;
+            display: none;
+        }
+        .degradation.severe   { background: #fde8ea; border-left-color: #dc3545; }
+        .degradation.elevated { background: #fff3d6; border-left-color: #f0ad4e; }
+        .degradation.mild     { background: #fffbf0; border-left-color: #f0ad4e; }
+        .degradation.stable   { background: #e6f6ec; border-left-color: #28a745; }
+        .degradation h4 { margin: 0 0 8px; font-size: 1rem; }
+        .degradation .verdict {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: #fff;
+            font-weight: bold;
+            margin-left: 8px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .degradation.severe   .verdict { color: #dc3545; }
+        .degradation.elevated .verdict { color: #b8860b; }
+        .degradation.mild     .verdict { color: #b8860b; }
+        .degradation.stable   .verdict { color: #28a745; }
+        .degradation table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.86rem; }
+        .degradation th, .degradation td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        .degradation th { background: #f7f8fa; font-weight: bold; color: #444; }
+        .degradation td.num { text-align: right; font-family: Consolas, monospace; }
+        .degradation .sev-stable   { color: #28a745; font-weight: bold; }
+        .degradation .sev-mild     { color: #b8860b; font-weight: bold; }
+        .degradation .sev-elevated { color: #d97706; font-weight: bold; }
+        .degradation .sev-severe   { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aircraft Engine RCL Forecast</h1>
+        <p class="lede">LEAP-1A · LSTM / GRU / CNN ensemble · 49-engine combined fleet</p>
+
+        <div class="meta" id="apiMeta">
+            <span>API: <b id="apiUrl">http://127.0.0.1:8001</b></span>
+            <span class="pill" id="apiStatus">checking…</span>
+            <span id="apiDetails" style="display:block; margin-top:6px; color:#666; font-size:0.82rem;"></span>
+        </div>
+
+        <h2>Input: last <span id="windowSize">40</span> flights of one engine</h2>
+
+        <form id="predictionForm">
+            <label for="csvFile">Upload CSV (one row per flight, oldest first)</label>
+            <input type="file" id="csvFile" accept=".csv,text/csv" required>
+            <small>
+              Required columns: <code>flight_cycle, egt_probe_average, fuel_flw, core_spd,
+              oil_temp, oil_pres, pt2_(fan_inlet_tot_pres)</code> + their <code>_norm</code> variants,
+              plus <code>eng_type</code> and either <code>flight_phase</code> or its one-hots,
+              and a <code>flight_datetime_c</code> column (used to derive month/day-of-week sin/cos).
+              Hint: rows from <code>Data/LEAB_engines_data_cleaned.csv</code> already match this layout.
+            </small>
+
+            <label for="model_choice">Model</label>
+            <select id="model_choice" name="model_choice">
+                <option value="average" selected>Ensemble average (LSTM + GRU + CNN)</option>
+                <option value="lstm">LSTM only</option>
+                <option value="gru">GRU only</option>
+                <option value="cnn">CNN only</option>
+            </select>
+
+            <button type="submit" id="submitBtn" disabled>Predict RCL</button>
+        </form>
+
+        <div class="result" id="result">
+            <h3 id="resultTitle">Predicted Remaining Cycle Life</h3>
+            <div class="rcl" id="rclValue">—</div>
+            <div class="breakdown" id="breakdown"></div>
+            <div class="health-bar" id="healthBar" style="display:none;">
+                <div class="track"><div class="fill" id="healthFill"></div></div>
+                <div class="marker"><span>0 cycles</span><span id="healthRange">/ 4000 cycles</span></div>
+            </div>
+        </div>
+
+        <div class="degradation" id="degradationCard">
+            <h4>Sensor-driven degradation analysis<span class="verdict" id="degradationVerdict">—</span></h4>
+            <div id="degradationSummary" style="font-size:0.88rem; color:#555;"></div>
+            <table id="degradationTable">
+                <thead><tr><th>Sensor</th><th>Slope per cycle</th><th>Fleet percentile</th><th>Severity</th></tr></thead>
+                <tbody id="degradationBody"></tbody>
+            </table>
+            <div id="rfBlock" style="display:none;"></div>
+        </div>
+
+        <details>
+            <summary>Show raw API request / response</summary>
+            <pre id="rawDebug">(no request sent yet)</pre>
+        </details>
+    </div>
+
+    <script>
+    const API_URL = "http://127.0.0.1:8001";
+    const apiUrlSpan   = document.getElementById("apiUrl");
+    const apiStatus    = document.getElementById("apiStatus");
+    const apiDetails   = document.getElementById("apiDetails");
+    const windowSpan   = document.getElementById("windowSize");
+    const submitBtn    = document.getElementById("submitBtn");
+    const result       = document.getElementById("result");
+    const resultTitle  = document.getElementById("resultTitle");
+    const rclValue     = document.getElementById("rclValue");
+    const breakdown    = document.getElementById("breakdown");
+    const healthBar    = document.getElementById("healthBar");
+    const healthFill   = document.getElementById("healthFill");
+    const healthRange  = document.getElementById("healthRange");
+    const rawDebug     = document.getElementById("rawDebug");
+    apiUrlSpan.textContent = API_URL;
+
+    // Schema fetched from /schema once at load. Falls back to defaults if API is down.
+    let schema = {
+        window_size: 40,
+        n_features: 20,
+        feature_order: [],
+        fleet_max_life: 4000,
+        model_choices: ["lstm", "gru", "cnn", "average"],
+    };
+
+    async function checkApi() {
+        try {
+            const [healthRes, schemaRes] = await Promise.all([
+                fetch(`${API_URL}/health`),
+                fetch(`${API_URL}/schema`),
+            ]);
+            if (!healthRes.ok) throw new Error(`/health ${healthRes.status}`);
+            const health = await healthRes.json();
+            const sch = schemaRes.ok ? await schemaRes.json() : null;
+            if (sch) schema = { ...schema, ...sch };
+            windowSpan.textContent = schema.window_size;
+            healthRange.textContent = `/ ${schema.fleet_max_life} cycles`;
+            if (health.status === "healthy") {
+                apiStatus.textContent = "healthy";
+                apiStatus.className = "pill ok";
+                apiDetails.textContent = `Models loaded: ${health.models_loaded.join(", ")} · window=${schema.window_size}, features=${schema.n_features}`;
+                submitBtn.disabled = false;
+            } else {
+                apiStatus.textContent = health.status;
+                apiStatus.className = "pill warn";
+                apiDetails.textContent = health.note || "API loaded but in a degraded state.";
+                submitBtn.disabled = true;
+            }
+        } catch (e) {
+            apiStatus.textContent = "offline";
+            apiStatus.className = "pill bad";
+            apiDetails.textContent = `Cannot reach ${API_URL}. Run start_servers.py or 'uvicorn api_inference:app --port 8001'.`;
+            submitBtn.disabled = true;
+        }
+    }
+
+    // Minimal CSV parser - handles quoted fields with commas, returns array of objects.
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+        if (lines.length < 2) return { headers: [], rows: [] };
+        const splitRow = (line) => {
+            const out = []; let cur = ""; let inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (c === '"' && line[i+1] === '"' && inQ) { cur += '"'; i++; continue; }
+                if (c === '"') { inQ = !inQ; continue; }
+                if (c === ',' && !inQ) { out.push(cur); cur = ""; continue; }
+                cur += c;
+            }
+            out.push(cur);
+            return out;
+        };
+        const headers = splitRow(lines[0]).map(h => h.trim());
+        const rows = lines.slice(1).map(line => {
+            const vals = splitRow(line);
+            const obj = {};
+            headers.forEach((h, i) => obj[h] = vals[i]);
+            return obj;
+        });
+        return { headers, rows };
+    }
+
+    // Convert one CSV row dict into the FlightRow expected by /predict.
+    function rowToFlight(row) {
+        const f = parseFloat;
+        const num = (k) => {
+            const v = f(row[k]);
+            if (Number.isNaN(v)) throw new Error(`Missing or non-numeric value for column "${k}".`);
+            return v;
+        };
+        const intv = (k) => {
+            const v = parseInt(row[k], 10);
+            return Number.isNaN(v) ? 0 : v;
+        };
+
+        // Cyclical time encodings - derive from flight_datetime_c if not pre-computed.
+        let monthSin, monthCos, dowSin, dowCos;
+        if (row.month_sin !== undefined && row.month_sin !== "") {
+            monthSin = num("month_sin"); monthCos = num("month_cos");
+            dowSin = num("dayofweek_sin"); dowCos = num("dayofweek_cos");
+        } else if (row.flight_datetime_c) {
+            const d = new Date(row.flight_datetime_c);
+            if (isNaN(d.getTime())) throw new Error(`Could not parse flight_datetime_c: ${row.flight_datetime_c}`);
+            const month = d.getMonth() + 1;        // 1..12
+            const dayOfWeek = (d.getDay() + 6) % 7; // pandas Monday=0..Sunday=6
+            monthSin = Math.sin(2 * Math.PI * month / 12);
+            monthCos = Math.cos(2 * Math.PI * month / 12);
+            dowSin   = Math.sin(2 * Math.PI * dayOfWeek / 7);
+            dowCos   = Math.cos(2 * Math.PI * dayOfWeek / 7);
+        } else {
+            throw new Error(`Row needs either month_sin/cos+dayofweek_sin/cos or flight_datetime_c.`);
+        }
+
+        // Flight-phase one-hots from a single phase column or already-encoded columns.
+        let phaseCruise, phaseTakeoff;
+        if (row.flight_phase_CRUISE !== undefined || row.flight_phase_TAKEOFF !== undefined) {
+            phaseCruise = intv("flight_phase_CRUISE");
+            phaseTakeoff = intv("flight_phase_TAKEOFF");
+        } else if (row.flight_phase) {
+            phaseCruise  = row.flight_phase === "CRUISE"  ? 1 : 0;
+            phaseTakeoff = row.flight_phase === "TAKEOFF" ? 1 : 0;
+        } else {
+            throw new Error(`Row needs either flight_phase or flight_phase_CRUISE/_TAKEOFF.`);
+        }
+
+        // engtype one-hots from eng_type or already-encoded columns.
+        let etA26, etA26E1;
+        if (row["engtype_LEAP-1A26"] !== undefined || row["engtype_LEAP-1A26E1"] !== undefined) {
+            etA26   = intv("engtype_LEAP-1A26");
+            etA26E1 = intv("engtype_LEAP-1A26E1");
+        } else if (row.eng_type) {
+            etA26   = row.eng_type === "LEAP-1A26" ? 1 : 0;
+            etA26E1 = row.eng_type === "LEAP-1A26E1" ? 1 : 0;
+        } else {
+            throw new Error(`Row needs either eng_type or engtype_LEAP-1A26/_E1 columns.`);
+        }
+
+        return {
+            egt_probe_average: num("egt_probe_average"),
+            fuel_flw: num("fuel_flw"),
+            core_spd: num("core_spd"),
+            oil_temp: num("oil_temp"),
+            oil_pres: num("oil_pres"),
+            "pt2_(fan_inlet_tot_pres)": num("pt2_(fan_inlet_tot_pres)"),
+            egt_probe_average_norm: num("egt_probe_average_norm"),
+            fuel_flw_norm: num("fuel_flw_norm"),
+            core_spd_norm: num("core_spd_norm"),
+            oil_temp_norm: num("oil_temp_norm"),
+            oil_pres_norm: num("oil_pres_norm"),
+            "pt2_(fan_inlet_tot_pres)_norm": num("pt2_(fan_inlet_tot_pres)_norm"),
+            "engtype_LEAP-1A26": etA26,
+            "engtype_LEAP-1A26E1": etA26E1,
+            month_sin: monthSin,
+            month_cos: monthCos,
+            dayofweek_sin: dowSin,
+            dayofweek_cos: dowCos,
+            flight_phase_CRUISE: phaseCruise,
+            flight_phase_TAKEOFF: phaseTakeoff,
+            flight_cycle: parseInt(row.flight_cycle, 10),
+        };
+    }
+
+    function showError(msg) {
+        result.style.display = "block";
+        result.className = "result error";
+        resultTitle.textContent = "Error";
+        rclValue.textContent = "—";
+        breakdown.textContent = msg;
+        healthBar.style.display = "none";
+        document.getElementById("degradationCard").style.display = "none";
+    }
+
+    function showResult(body) {
+        result.style.display = "block";
+        const isWarn = body.warnings && body.warnings.length > 0;
+        result.className = isWarn ? "result warn" : "result";
+        resultTitle.textContent = isWarn ? "Predicted RCL (warning)" : "Predicted Remaining Cycle Life";
+        rclValue.textContent = `${body.RCL_prediction} cycles`;
+
+        const perModel = body.per_model_residuals || {};
+        const perModelStr = Object.entries(perModel)
+            .map(([k, v]) => `${k}=${(+v).toFixed(2)}`)
+            .join(", ");
+
+        // Friendly label for baseline_source from the API.
+        const sourceLabels = {
+            "request_override":      "Per-engine (override supplied in request)",
+            "fleet_median_fallback": "Fleet median (engine not in lookup table - calibration may be off)",
+        };
+        let baselineSourceText = body.baseline_source || "fleet_median_fallback";
+        if (baselineSourceText.startsWith("lookup(")) {
+            baselineSourceText = `Per-engine lookup: ${baselineSourceText.slice(7, -1)}`;
+        } else if (baselineSourceText in sourceLabels) {
+            baselineSourceText = sourceLabels[baselineSourceText];
+        }
+
+        const lines = [
+            `<b>Model:</b> ${body.model_choice}`,
+            `<b>Baseline RCL:</b> ${body.baseline_rcl} cycles (= expected_max_cycle - latest flight_cycle)`,
+            `<b>Baseline source:</b> ${baselineSourceText}`,
+            `<b>Model residual:</b> ${(+body.residual).toFixed(2)} cycles`,
+            perModelStr ? `<b>Per-model residuals:</b> ${perModelStr}` : "",
+            (body.warnings || []).map(w => `⚠ ${w}`).join("<br>"),
+        ].filter(Boolean);
+        breakdown.innerHTML = lines.join("<br>");
+
+        const pct = Math.max(0, Math.min(100, (body.RCL_prediction / schema.fleet_max_life) * 100));
+        healthFill.style.width = pct + "%";
+        healthBar.style.display = "block";
+
+        renderDegradation(body.degradation);
+    }
+
+    function renderDegradation(d) {
+        const card    = document.getElementById("degradationCard");
+        const verdict = document.getElementById("degradationVerdict");
+        const summary = document.getElementById("degradationSummary");
+        const body    = document.getElementById("degradationBody");
+
+        if (!d) {
+            card.style.display = "none";
+            return;
+        }
+        card.style.display = "block";
+        card.className = "degradation " + d.overall_severity;
+        verdict.textContent = d.overall_severity;
+
+        const sensorPretty = {
+            "egt_probe_average": "EGT (rises with degradation)",
+            "fuel_flw":          "Fuel flow (rises with degradation)",
+            "core_spd":          "Core speed (drops with degradation)",
+            "oil_pres":          "Oil pressure (drops with degradation)",
+        };
+
+        summary.innerHTML =
+            `Worst-sensor percentile: <b>${d.max_sensor_percentile}</b>` +
+            ` &nbsp;·&nbsp; Composite (mean) percentile: <b>${d.mean_sensor_percentile}</b>` +
+            ` &nbsp;·&nbsp; Slopes computed across the uploaded ${schema.window_size}-flight window vs flight_cycle.`;
+
+        body.innerHTML = "";
+        for (const [sensor, info] of Object.entries(d.per_sensor)) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${sensorPretty[sensor] || sensor}</td>
+                <td class="num">${info.slope_per_cycle >= 0 ? "+" : ""}${info.slope_per_cycle.toFixed(4)}</td>
+                <td class="num">P${info.fleet_percentile}</td>
+                <td><span class="sev-${info.severity}">${info.severity.toUpperCase()}</span></td>
+            `;
+            body.appendChild(tr);
+        }
+
+        // Random Forest classifier probabilities (added when degradation_rf.pkl is loaded)
+        const rfBlock = document.getElementById("rfBlock");
+        if (d.rf) {
+            const ordered = ["stable", "mild", "elevated", "severe"];
+            const probs = d.rf.probabilities;
+            const colors = { stable: "#28a745", mild: "#b8860b", elevated: "#d97706", severe: "#dc3545" };
+            const bars = ordered.map(label => {
+                const p = (probs[label] || 0) * 100;
+                const w = Math.max(1, p);
+                return `
+                  <div style="margin:4px 0;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#444;">
+                      <span><b style="color:${colors[label]};">${label.toUpperCase()}</b>${label === d.rf.severity ? " &lt;-- predicted" : ""}</span>
+                      <span class="num">${p.toFixed(1)}%</span>
+                    </div>
+                    <div style="background:#eee;border-radius:3px;overflow:hidden;height:9px;">
+                      <div style="width:${w}%;height:100%;background:${colors[label]};"></div>
+                    </div>
+                  </div>`;
+            }).join("");
+            const agree = d.rf.agrees_with_rule
+                ? '<span style="color:#28a745;">agrees with rule</span>'
+                : '<span style="color:#dc3545;">disagrees with rule</span>';
+            const cvText = d.rf.cv_accuracy_train != null
+                ? `Trained RF, CV accuracy ${(d.rf.cv_accuracy_train * 100).toFixed(1)}% (engine-grouped 5-fold)`
+                : "Trained RF";
+            rfBlock.innerHTML = `
+              <div style="margin-top:14px;border-top:1px dashed #ccc;padding-top:10px;">
+                <div style="font-weight:bold;color:#444;font-size:0.88rem;margin-bottom:4px;">
+                  ${cvText} &nbsp;·&nbsp; ${agree}
+                </div>
+                ${bars}
+              </div>`;
+            rfBlock.style.display = "block";
+        } else {
+            rfBlock.style.display = "none";
+        }
+    }
+
+    document.getElementById("predictionForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        result.style.display = "none";
+
+        const fileInput = document.getElementById("csvFile");
+        if (!fileInput.files.length) { showError("Please select a CSV file."); return; }
+        const text = await fileInput.files[0].text();
+
+        let parsed;
+        try { parsed = parseCSV(text); }
+        catch (err) { showError("Failed to parse CSV: " + err.message); return; }
+
+        if (parsed.rows.length < schema.window_size) {
+            showError(`CSV has only ${parsed.rows.length} rows; need at least ${schema.window_size} (the API window). Upload more flight history for this engine.`);
+            return;
+        }
+
+        // Take the latest WINDOW_SIZE rows (assumed sorted oldest -> newest).
+        const tailRows = parsed.rows.slice(-schema.window_size);
+
+        let flights;
+        try { flights = tailRows.map(rowToFlight); }
+        catch (err) { showError("Row conversion failed: " + err.message); return; }
+
+        // Detect the engine identifier from the CSV (column "esn" or "eng_number").
+        // The API uses this to look up the per-engine expected_max_cycle for a
+        // calibrated baseline; without it the API falls back to the fleet median.
+        const engineCol = parsed.headers.includes("esn") ? "esn"
+                       : (parsed.headers.includes("eng_number") ? "eng_number" : null);
+        let engNumber = null;
+        if (engineCol) {
+            const engsInWindow = new Set(tailRows.map(r => (r[engineCol] || "").trim()).filter(Boolean));
+            if (engsInWindow.size === 1) {
+                engNumber = [...engsInWindow][0];
+            } else if (engsInWindow.size > 1) {
+                showError(`CSV contains data for ${engsInWindow.size} different engines (${[...engsInWindow].join(", ")}). Upload one engine at a time.`);
+                return;
+            }
+        }
+
+        const payload = {
+            flights,
+            model_choice: document.getElementById("model_choice").value,
+        };
+        if (engNumber) payload.eng_number = engNumber;
+
+        rawDebug.textContent = "→ POST /predict\n" + JSON.stringify({ ...payload, flights: `[${flights.length} rows omitted for brevity]` }, null, 2);
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Predicting…";
+        try {
+            const resp = await fetch(`${API_URL}/predict`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const body = await resp.json();
+            rawDebug.textContent += "\n\n← " + resp.status + "\n" + JSON.stringify(body, null, 2);
+            if (!resp.ok) { showError(body.detail || `HTTP ${resp.status}`); return; }
+            showResult(body);
+        } catch (err) {
+            showError("Request failed: " + err.message);
+            rawDebug.textContent += "\n\n!! " + err.message;
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Predict RCL";
+        }
+    });
+
+    checkApi();
+    </script>
+</body>
+</html>
