@@ -59,6 +59,28 @@ try:
 except FileNotFoundError:
     ENGINE_EXPECTED_MAX = {}
 
+# Input feature scaler (May-2026): Lstm_PM_py.ipynb cell 7 fits a MinMaxScaler
+# on the 21 input features and persists its bounds to input_scaler.json. The
+# models were trained on inputs in [0, 1], so the API must apply the same
+# normalisation at serving time — otherwise raw sensor magnitudes (e.g. fuel
+# flow ~6000 vs scaled ~0.7) blow up the CNN's linear convolutions.
+import numpy as np
+_INPUT_SCALER_PATH = "input_scaler.json"
+INPUT_SCALER = None
+INPUT_SCALER_FEATURES: list[str] = []
+INPUT_DATA_MIN: "np.ndarray | None" = None
+INPUT_DATA_RANGE: "np.ndarray | None" = None
+try:
+    _is = _json.loads(open(_INPUT_SCALER_PATH).read())
+    INPUT_SCALER_FEATURES = list(_is["feature_names"])
+    INPUT_DATA_MIN   = np.asarray(_is["data_min_"],   dtype=np.float32)
+    _dmax            = np.asarray(_is["data_max_"],   dtype=np.float32)
+    INPUT_DATA_RANGE = _dmax - INPUT_DATA_MIN
+    INPUT_DATA_RANGE = np.where(INPUT_DATA_RANGE == 0, 1.0, INPUT_DATA_RANGE)  # avoid div0
+    INPUT_SCALER = "loaded"
+except FileNotFoundError:
+    pass  # API will run with raw inputs; CNN may misbehave (see comment above).
+
 _RESIDUAL_RANGE = RESIDUAL_MAX - RESIDUAL_MIN
 
 def _inverse_scale_residual(scaled: float) -> float:
@@ -421,6 +443,8 @@ def _request_to_tensor(req: PredictionRequest) -> tuple[np.ndarray, int, list[di
 
     flight_cycle_norm is derived server-side as flight_cycle / FLEET_MAX_LIFE
     so the frontend doesn't need to compute it. Required by Option D models.
+    After building the raw array, the input scaler from input_scaler.json is
+    applied (same MinMax bounds the model saw during training).
     """
     rows = []
     raw_dicts = []
@@ -430,6 +454,9 @@ def _request_to_tensor(req: PredictionRequest) -> tuple[np.ndarray, int, list[di
         rows.append([d[col] for col in FEATURE_ORDER])
         raw_dicts.append(d)
     arr = np.asarray(rows, dtype=np.float32)
+    # Apply the training-time MinMax normalisation so model inputs sit in [0, 1].
+    if INPUT_DATA_MIN is not None and INPUT_DATA_RANGE is not None:
+        arr = (arr - INPUT_DATA_MIN) / INPUT_DATA_RANGE
     if arr.shape != (WINDOW_SIZE, N_FEATURES):
         raise ValueError(f"Built tensor shape {arr.shape}, expected ({WINDOW_SIZE}, {N_FEATURES}).")
     latest_cycle = int(req.flights[-1].flight_cycle)
