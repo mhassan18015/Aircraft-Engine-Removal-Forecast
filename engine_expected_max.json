@@ -161,12 +161,6 @@
     "is_engine_active": true,
     "removal_reason": "active"
   },
-  "ESN34": {
-    "expected_max_cycle": 5000.0,
-    "eng_type": "LEAP-1A26",
-    "is_engine_active": true,
-    "removal_reason": "active"
-  },
   "ESN35": {
     "expected_max_cycle": 5000.0,
     "eng_type": "LEAP-1A26",

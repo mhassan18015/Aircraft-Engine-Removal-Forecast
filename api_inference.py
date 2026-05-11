@@ -91,7 +91,9 @@ ENGTYPE_COLS = ["engtype_LEAP-1A26", "engtype_LEAP-1A26E1"]
 TIME_FEATS   = ["month_sin", "month_cos", "dayofweek_sin", "dayofweek_cos"]
 PHASE_FEATS  = ["flight_phase_CRUISE", "flight_phase_TAKEOFF"]
 
-FEATURE_ORDER = RAW_SENSORS + NORM_SENSORS + ENGTYPE_COLS + TIME_FEATS + PHASE_FEATS
+# Option D adds flight_cycle_norm as the 21st feature (cycle/FLEET_MAX_LIFE).
+# Models trained from May-2026 onwards expect this layout.
+FEATURE_ORDER = RAW_SENSORS + NORM_SENSORS + ENGTYPE_COLS + TIME_FEATS + PHASE_FEATS + ["flight_cycle_norm"]
 N_FEATURES = len(FEATURE_ORDER)
 
 MODEL_PATHS = {
@@ -415,11 +417,16 @@ async def get_schema():
 
 
 def _request_to_tensor(req: PredictionRequest) -> tuple[np.ndarray, int, list[dict]]:
-    """Turn a PredictionRequest into (X, latest_flight_cycle, raw_flight_dicts)."""
+    """Turn a PredictionRequest into (X, latest_flight_cycle, raw_flight_dicts).
+
+    flight_cycle_norm is derived server-side as flight_cycle / FLEET_MAX_LIFE
+    so the frontend doesn't need to compute it. Required by Option D models.
+    """
     rows = []
     raw_dicts = []
     for f in req.flights:
         d = f.model_dump(by_alias=True)
+        d.setdefault("flight_cycle_norm", float(d["flight_cycle"]) / FLEET_MAX_LIFE)
         rows.append([d[col] for col in FEATURE_ORDER])
         raw_dicts.append(d)
     arr = np.asarray(rows, dtype=np.float32)
