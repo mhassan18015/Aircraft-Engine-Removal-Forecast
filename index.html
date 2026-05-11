@@ -486,30 +486,29 @@
             ` &nbsp;·&nbsp; Fleet percentile <b>P${c.fleet_percentile}</b>` +
             ` &nbsp;·&nbsp; Model C-index ${c.model_c_index ? c.model_c_index.toFixed(3) : "—"}`;
 
-        // Fleet-percentile gauge: full gradient always visible, marker at engine's P
+        // Fleet-percentile gauge: full gradient always visible, marker BELOW pointing up
         const pct = Math.max(0, Math.min(100, c.fleet_percentile || 0));
         bars.innerHTML = `
             <div style="font-size:0.8rem;color:#444;margin-bottom:6px;">
                 Fleet hazard percentile &nbsp;·&nbsp;
                 <span style="color:#888;font-style:italic;">healthier engines on the left, more at-risk on the right</span>
             </div>
-            <div style="position:relative;height:38px;">
-                <!-- Full gradient bar (always visible across 0-100) -->
-                <div style="position:absolute;top:18px;left:0;right:0;height:14px;
-                            border-radius:4px;
-                            background:linear-gradient(90deg,#28a745 0%,#28a745 25%,#b8860b 50%,#d97706 75%,#dc3545 100%);
-                            border:1px solid #ccc;"></div>
-                <!-- Triangle marker for this engine, pointing down onto the gradient -->
-                <div style="position:absolute;left:calc(${pct}% - 8px);top:0;">
-                    <div style="width:0;height:0;
-                                border-left:8px solid transparent;
-                                border-right:8px solid transparent;
-                                border-top:10px solid #1f3a68;"></div>
-                    <div style="position:absolute;top:-18px;left:-12px;
-                                background:#1f3a68;color:#fff;font-size:0.72rem;
-                                padding:2px 6px;border-radius:3px;font-weight:bold;
-                                white-space:nowrap;">P${pct}</div>
-                </div>
+            <!-- Full gradient bar (always visible across 0-100) -->
+            <div style="height:14px;border-radius:4px;
+                        background:linear-gradient(90deg,#28a745 0%,#28a745 25%,#b8860b 50%,#d97706 75%,#dc3545 100%);
+                        border:1px solid #ccc;"></div>
+            <!-- Marker row below the bar -->
+            <div style="position:relative;height:22px;margin-top:2px;">
+                <!-- Triangle pointing UP at the engine's percentile -->
+                <div style="position:absolute;left:calc(${pct}% - 7px);top:0;
+                            width:0;height:0;
+                            border-left:7px solid transparent;
+                            border-right:7px solid transparent;
+                            border-bottom:9px solid #1f3a68;"></div>
+                <!-- Small label below the triangle -->
+                <div style="position:absolute;left:calc(${pct}% - 22px);top:10px;
+                            font-size:0.72rem;font-weight:bold;color:#1f3a68;
+                            white-space:nowrap;">P${pct}</div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin-top:2px;">
                 <span>0 — lowest risk</span>
