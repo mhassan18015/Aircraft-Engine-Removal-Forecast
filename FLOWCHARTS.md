@@ -32,7 +32,7 @@ flowchart TD
         Clean["📓 engine_removal_forecast_cleaning.ipynb<br/>• column rename + phase filter<br/>• per-engine baseline norm (*_norm)<br/>• one-hot eng_type<br/>• <b>censoring-aware RCL</b>"]:::notebook
     end
 
-    Cleaned["📁 Data/LEAB_engines_data_cleaned.csv<br/>49 engines, 36 columns"]:::cleanedData
+    Cleaned["📁 Data/LEAB_engines_data_cleaned.csv<br/>48 engines, 36 columns<br/>(ESN34 excluded — leased return)"]:::cleanedData
 
     subgraph Analysis [" "]
         direction LR
@@ -42,15 +42,15 @@ flowchart TD
 
     subgraph Training [" "]
         direction TB
-        LSTM["📓 Lstm_PM_py.ipynb<br/>• stratified 5/5/38 split<br/>• 40-step sliding windows<br/>• residual-RCL target<br/>• 3 architectures"]:::notebook
+        LSTM["📓 Lstm_PM_py.ipynb<br/>• stratified 5/4/39 split<br/>• 40-step sliding windows<br/>• 21 features (incl. flight_cycle_norm)<br/>• seed=42, MSE loss<br/>• 3 architectures (BiLSTM + GRU + CNN)"]:::notebook
         Wrapper["🐍 train_pipeline.py<br/>nbconvert + MLflow logging"]:::notebook
     end
 
-    Models["💾 Model artifacts<br/>best_lstm2_model.keras<br/>best_gru_model.keras<br/>best_cnn_model.keras<br/>best_lstm2_history.json"]:::artifact
+    Models["💾 Model artifacts<br/>best_lstm2_model.keras<br/>best_gru_model.keras<br/>best_cnn_model.keras<br/>best_lstm2_model_all.keras (production)<br/>best_lstm2_history.json<br/>input_scaler.json + rul_scaler.json"]:::artifact
 
     subgraph Serving [" "]
         direction TB
-        API["⚙️ api_inference.py<br/>FastAPI on :8001 / :8000<br/>/predict /health /schema /metrics"]:::service
+        API["⚙️ api_inference.py<br/>FastAPI on :8001 / static on :8000<br/>/predict /health /schema<br/>/metrics (planned)"]:::service
         Frontend["🌐 index.html<br/>CSV upload + live API status"]:::service
     end
 
@@ -94,7 +94,7 @@ flowchart TD
 
 ## 2. Data Cleaning Pipeline
 
-Inside `engine_removal_forecast_cleaning.ipynb`. The big new piece is the **censoring-aware RCL** in cell 28 — without it the model labels were systematically wrong by 1,000-3,000 cycles for the 43 engines still actively flying.
+Inside `engine_removal_forecast_cleaning.ipynb`. The big piece is the **censoring-aware RCL via 5,000-cycle policy threshold** in cell 28 — without it, model labels were systematically wrong by 1,000-3,000 cycles for the 42 engines still actively flying. Cell 5 also excludes ESN34 as a domain-flagged outlier (leased engine returned to lessor, non-organic removal event).
 
 ```mermaid
 flowchart TD
@@ -105,42 +105,43 @@ flowchart TD
     Raw[("Data/A320NEOMSRMSC_masked.csv")]:::data
 
     Load[/"Cell 4: read CSV<br/>parse_dates flight_datetime_c"/]:::step
-    Drop[/"Cell 5: drop CARRIER, AIRCRAFT_ID, EPOSITION"/]:::step
-    Rename[/"Cell 12: snake_case columns<br/>strip special chars"/]:::step
+    ExcludeESN34[/"Cell 5: drop ESN34<br/>leased engine returned to lessor<br/>49 → 48 engines"/]:::step
+    Drop[/"Cell 6: drop CARRIER, AIRCRAFT_ID, EPOSITION"/]:::step
+    Rename[/"Cell 13: snake_case columns<br/>strip special chars"/]:::step
     PhaseFilter[/"Cell 20: keep only CRUISE + TAKEOFF<br/>phases ENGINE_START, CEOD_*, CLIMB dropped"/]:::step
     Sort[/"Cell 23: sort by esn, flight_datetime_c"/]:::step
     Cycle[/"Cell 25: assign flight_cycle<br/>increment on each TAKEOFF row"/]:::step
 
-    subgraph CensoringFix ["Cell 28 — censoring-aware RCL"]
+    subgraph CensoringFix ["Cell 28 — censoring-aware RCL (policy threshold)"]
         direction TB
         D1{"days_since_last >= 21d ?"}:::decision
-        Removed[/"engine treated as removed<br/>expected_max = observed max_cycle"/]:::step
-        Active[/"engine still flying<br/>expected_max = empirical prior"/]:::step
-        Prior[("Empirical prior<br/>LEAP-1A26: 4141 (n=4)<br/>LEAP-1A26E1: 4380 (fallback)")]:::data
+        Removed[/"removed engine<br/>expected_max = min(5000, observed max_cycle)"/]:::step
+        Active[/"active engine<br/>expected_max = 5000 (policy)"/]:::step
+        Policy[("POLICY_REMOVAL_CYCLE<br/>= 5000 cycles<br/>auditable fleet-wide threshold")]:::data
         D1 -- yes --> Removed
         D1 -- no --> Active
-        Active --> Prior
-        Prior --> Active
+        Active --> Policy
+        Policy --> Active
         Removed --> RCL
         Active --> RCL
-        RCL[/"RCL = max(expected_max - flight_cycle, 0)<br/>+ is_engine_active flag<br/>+ expected_max_cycle column"/]:::step
+        RCL[/"RCL = max(expected_max - flight_cycle, 0)<br/>+ is_engine_active flag<br/>+ expected_max_cycle column<br/>+ removal_reason: off_wing / over_policy / off_wing_and_over_policy"/]:::step
     end
 
     NormStep[/"Cell 33: per-engine baseline normalisation<br/>for each esn × phase, subtract first-50-cycle mean<br/>produces 6 *_norm drift columns"/]:::step
     OneHot[/"Cell 34: one-hot eng_type<br/>engtype_LEAP-1A26, engtype_LEAP-1A26E1"/]:::step
-    Save[/"Cell 35: write Data/LEAB_engines_data_cleaned.csv<br/>49 engines × 36 columns × ~546k rows"/]:::step
+    Save[/"Cell 35: write Data/LEAB_engines_data_cleaned.csv<br/>48 engines × 36 columns × ~536k rows"/]:::step
 
     Cleaned[("Data/LEAB_engines_data_cleaned.csv")]:::data
 
-    Raw --> Load --> Drop --> Rename --> PhaseFilter --> Sort --> Cycle --> CensoringFix
+    Raw --> Load --> ExcludeESN34 --> Drop --> Rename --> PhaseFilter --> Sort --> Cycle --> CensoringFix
     CensoringFix --> NormStep --> OneHot --> Save --> Cleaned
 ```
 
----Three pending plumbing items
+---
 
 ## 3. Model Training Pipeline
 
-Inside `Lstm_PM_py.ipynb`. Three architectures train on the same data and split, each cached to its own `.keras` file. The residual-RCL target is the key trick that prevents the model from short-circuiting via `flight_cycle`.
+Inside `Lstm_PM_py.ipynb`. Three architectures train on the same data and split, each cached to its own `.keras` file. The model predicts a residual on top of `(FLEET_MAX_LIFE − flight_cycle)`; under Option D, `flight_cycle_norm` is also exposed as the 21st input feature so permutation importance can quantify the structural cycle dominance.
 
 ```mermaid
 flowchart TD
@@ -152,19 +153,19 @@ flowchart TD
     Cleaned[("LEAB_engines_data_cleaned.csv")]:::tensor
 
     C0[/"Cell 0: Colab auto-mount + cd"/]:::cell
-    C2[/"Cell 2: feature engineering<br/>add month_sin/cos, dayofweek_sin/cos<br/>get_dummies flight_phase"/]:::cell
-    C3[/"Cell 3: feature selection (sensor_cols)<br/>raw 6 + norm 6 + engtype 2 + time 4 + phase 2 = 20"/]:::cell
-    C4[/"Cell 4: stratified 5/5/38 engine split<br/>VAL = ESN18, ESN15, ESN17, ESN20, ESN10<br/>TEST = ESN21, ESN41, ESN13, ESN24, ESN14<br/>TRAIN = the other 38"/]:::cell
-    C6[/"Cell 6: per-engine ffill/bfill<br/>MinMax scale features<br/>compute residual = RCL - baseline_RCL<br/>scale residual to 0..1"/]:::cell
-    C7[/"Cell 7: create_lstm_windows()<br/>40-step sliding windows, stride 2<br/>label = residual at window-end"/]:::cell
+    C3[/"Cell 3: feature engineering<br/>add month_sin/cos, dayofweek_sin/cos<br/>get_dummies flight_phase"/]:::cell
+    C4[/"Cell 4: feature selection (sensor_cols)<br/>raw 6 + norm 6 + engtype 2 + time 4 + phase 2 = 20"/]:::cell
+    C5[/"Cell 5: stratified 5/4/39 engine split<br/>VAL = ESN23, ESN9, ESN32, ESN8, ESN3<br/>TEST = ESN35, ESN27, ESN6, ESN26 (4 engines — ESN34 excluded)<br/>TRAIN = the other 39"/]:::cell
+    C7[/"Cell 7: per-engine ffill/bfill<br/>append flight_cycle_norm = flight_cycle / 5000 (21st feature)<br/>MinMax scale all 21 features → input_scaler.json<br/>MinMax scale residual → rul_scaler.json"/]:::cell
+    C8[/"Cell 8: create_lstm_windows()<br/>40-step sliding windows, stride 2<br/>label = residual at window-end"/]:::cell
 
-    Xtrain[("X_train, y_train<br/>~250K windows × 40 × 20")]:::tensor
-    Xval[("X_val<br/>~21K windows")]:::tensor
-    Xtest[("X_test<br/>~22K windows")]:::tensor
+    Xtrain[("X_train, y_train<br/>~270K windows × 40 × 21")]:::tensor
+    Xval[("X_val<br/>~18K windows")]:::tensor
+    Xtest[("X_test<br/>~29K windows")]:::tensor
 
-    subgraph TrainLoop ["Training (cells 11, 18, 19) — same data, three architectures"]
+    subgraph TrainLoop ["Training (cells 11, 19, 20) — seed=42, same data, three architectures"]
         direction LR
-        BiLSTM["BiLSTM 64-32-16<br/>+ Dense(32) + Dense(1)<br/>Huber(0.1), Adam, EarlyStopping(10)"]:::cell
+        BiLSTM["BiLSTM 64-32-16<br/>+ Dense(32) + Dense(1)<br/>MSE loss, Adam (LR 3e-3 → decay), EarlyStopping(10)<br/>L2 1e-4, Dropout 0.1"]:::cell
         GRU["GRU 64-32 + Dense"]:::cell
         CNN["1D CNN 64-32 + Dense"]:::cell
     end
@@ -177,20 +178,21 @@ flowchart TD
     GRUart[("best_gru_model.keras")]:::tensor
     CNNart[("best_cnn_model.keras")]:::tensor
 
-    subgraph Eval ["Evaluation (cells 12 - 15)"]
+    subgraph Eval ["Evaluation (cells 12 – 17)"]
         direction TB
-        C12[/"Cell 12: aggregate eval<br/>val_pred_rcl = baseline + scaler.inverse(residual)<br/>Val MAE 149.91, R² 0.979<br/>Test MAE 210.62, R² 0.960"/]:::metric
-        C13[/"Cell 13: per-engine breakdown<br/>all engines R² 0.936-0.983"/]:::metric
-        C14[/"Cell 14: sensor KDE overlay<br/>covariate-shift detection"/]:::metric
-        C15[/"Cell 15: RCL trajectory<br/>label-shift detection"/]:::metric
-        C16[/"Cell 16: LOEO preview<br/>6 engines × ~12 epochs each"/]:::metric
+        C12[/"Cell 12: aggregate eval<br/>val_pred_rcl = baseline + scaler.inverse(residual)<br/>Val MAE 62.84, R² 0.991<br/>Test MAE 75.85, R² 0.991"/]:::metric
+        C13[/"Cell 13: per-engine breakdown<br/>all 9 engines R² 0.940-0.998<br/>(test: 0.979-0.997)"/]:::metric
+        C14[/"Cell 14: permutation importance<br/>cycle ΔMAE +1,552 vs all-sensors −3.21<br/>structural cycle dominance confirmed"/]:::metric
+        C15[/"Cell 15: sensor KDE overlay<br/>covariate-shift detection"/]:::metric
+        C16[/"Cell 16: RCL trajectory<br/>label-shift detection"/]:::metric
+        C17[/"Cell 17: LOEO preview<br/>6 engines × ~12 epochs each"/]:::metric
     end
 
-    C19[/"Cell 19: full-data retrain<br/>writes best_lstm2_model_all.keras"/]:::cell
-    AllArt[("best_lstm2_model_all.keras<br/>production artifact")]:::tensor
+    C21[/"Cell 21: full-data retrain<br/>writes best_lstm2_model_all.keras"/]:::cell
+    AllArt[("best_lstm2_model_all.keras<br/>production artifact (full 48-engine retrain)")]:::tensor
 
-    Cleaned --> C0 --> C2 --> C3 --> C4 --> C6 --> C7
-    C7 --> Xtrain & Xval & Xtest
+    Cleaned --> C0 --> C3 --> C4 --> C5 --> C7 --> C8
+    C8 --> Xtrain & Xval & Xtest
 
     Xtrain --> LSTM_F
     LSTM_F -- "False + cache exists" --> LSTMart
@@ -207,9 +209,9 @@ flowchart TD
     LSTMart --> C12
     Xval --> C12
     Xtest --> C12
-    C12 --> C13 --> C14 --> C15 --> C16
+    C12 --> C13 --> C14 --> C15 --> C16 --> C17
 
-    LSTMart --> C19 --> AllArt
+    LSTMart --> C21 --> AllArt
 ```
 
 ---
@@ -229,9 +231,9 @@ sequenceDiagram
 
     User->>Browser: Open page (loads on form submit)
     Browser->>API: GET /health
-    API-->>Browser: {status: "healthy", schema_match: all true}
+    API-->>Browser: {status: "healthy", schema_match: all true,<br/>expected_n_features: 21}
     Browser->>API: GET /schema
-    API-->>Browser: {feature_order: [20], window_size: 40, fleet_max_life: 4000}
+    API-->>Browser: {feature_order: [21], window_size: 40,<br/>fleet_max_life: 5000}
     Note over Browser: Renders green "healthy" pill,<br/>enables submit button.
 
     User->>Browser: Upload last-40-flights CSV<br/>+ pick model_choice
@@ -240,20 +242,21 @@ sequenceDiagram
     Browser->>Browser: rowToFlight() ×40<br/>derive engtype_* and<br/>flight_phase_* one-hots
     deactivate Browser
 
-    Browser->>+API: POST /predict<br/>{flights: [40 rows], model_choice}
+    Browser->>+API: POST /predict<br/>{flights: [40 rows], model_choice, eng_number}
     API->>API: Pydantic validates<br/>FlightRow schema +<br/>flights.length == 40
     API->>API: SCHEMA_MATCH check<br/>against loaded models
 
     alt Schema mismatch
         API-->>Browser: 400 — "retrain via Lstm_PM_py.ipynb"
     else Valid
-        API->>API: _request_to_tensor()<br/>reshape to (1, 40, 20)
-        API->>+Models: model.predict(X)<br/>(LSTM / GRU / CNN / all 3)
-        Models-->>-API: residual (scaled)
-        API->>API: rcl = (FLEET_MAX_LIFE - latest_cycle)<br/>+ residual
-        API->>API: clip rcl ≥ 0,<br/>add warning if clipped
+        API->>API: _request_to_tensor()<br/>derive flight_cycle_norm = cycle/5000<br/>reshape to (1, 40, 21)<br/>apply input_scaler (MinMax → [0,1])
+        API->>API: _engine_baseline()<br/>lookup expected_max_cycle by eng_number<br/>baseline = expected_max − latest_cycle
+        API->>API: _compute_degradation()<br/>per-sensor slope + percentile<br/>RF classifier severity bucket
+        API->>+Models: model.predict(X)<br/>(LSTM / GRU / CNN / average of 3)
+        Models-->>-API: residual (scaled [0,1])
+        API->>API: residual_cycles = scaled × 1065<br/>rcl = baseline + residual_cycles<br/>clip rcl ≥ 0, add warning if clipped
         API->>Log: append prediction line
-        API-->>-Browser: 200<br/>{RCL_prediction, baseline_rcl,<br/>residual, per_model_residuals,<br/>warnings}
+        API-->>-Browser: 200<br/>{RCL_prediction, baseline_rcl, baseline_source,<br/>residual, per_model_residuals, degradation, warnings}
     end
 
     activate Browser

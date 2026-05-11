@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Predict Aircraft Engine Removal Forecast RCL</title>
+    <link rel="icon" href="data:,"><!-- suppress favicon.ico 404 -->
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +15,12 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            background: url('aircraft engine.jpg') no-repeat center center fixed;
+            /* Solid fallback shows if aircraft engine.jpg is absent. */
+            background-color: #1a3b5f;
+            background-image: linear-gradient(135deg, rgba(26,59,95,0.85), rgba(44,82,130,0.85)), url('aircraft engine.jpg');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
             background-size: cover;
         }
         .container {
@@ -217,6 +224,19 @@
                 <tbody id="degradationBody"></tbody>
             </table>
             <div id="rfBlock" style="display:none;"></div>
+        </div>
+
+        <div class="degradation" id="coxCard" style="display:none;">
+            <h4>Cox-PH survival hazard<span class="verdict" id="coxVerdict">—</span></h4>
+            <div id="coxSummary" style="font-size:0.88rem;color:#555;"></div>
+            <div id="coxBars" style="margin-top:10px;"></div>
+            <div id="coxHistory" style="display:none;margin-top:12px;border-top:1px dashed #ccc;padding-top:8px;">
+                <div style="font-weight:bold;color:#444;font-size:0.85rem;margin-bottom:4px;">
+                    Trend across previous predictions for this engine
+                </div>
+                <div id="coxHistoryList" style="font-size:0.82rem;color:#555;"></div>
+            </div>
+            <div id="coxNote" style="margin-top:8px;font-size:0.78rem;color:#777;font-style:italic;"></div>
         </div>
 
         <details>
@@ -437,6 +457,82 @@
         healthBar.style.display = "block";
 
         renderDegradation(body.degradation);
+        renderCoxPH(body.cox_ph);
+    }
+
+    function renderCoxPH(c) {
+        const card    = document.getElementById("coxCard");
+        const verdict = document.getElementById("coxVerdict");
+        const summary = document.getElementById("coxSummary");
+        const bars    = document.getElementById("coxBars");
+        const note    = document.getElementById("coxNote");
+        const hist    = document.getElementById("coxHistory");
+        const histLst = document.getElementById("coxHistoryList");
+        if (!c || !c.available) {
+            card.style.display = "none";
+            return;
+        }
+        card.style.display = "block";
+
+        const bucketColors = { low: "#28a745", moderate: "#b8860b", elevated: "#d97706", high: "#dc3545" };
+        const col = bucketColors[c.risk_bucket] || "#666";
+        card.style.borderLeft = `4px solid ${col}`;
+        verdict.textContent = (c.risk_bucket || "").toUpperCase();
+        verdict.style.color = col;
+
+        summary.innerHTML =
+            `Hazard score <b>${c.hazard_score}</b>` +
+            ` &nbsp;·&nbsp; Linear predictor <b>${c.linear_predictor >= 0 ? "+" : ""}${c.linear_predictor}</b>` +
+            ` &nbsp;·&nbsp; Fleet percentile <b>P${c.fleet_percentile}</b>` +
+            ` &nbsp;·&nbsp; Model C-index ${c.model_c_index ? c.model_c_index.toFixed(3) : "—"}`;
+
+        // Fleet-percentile gauge: full gradient always visible, marker at engine's P
+        const pct = Math.max(0, Math.min(100, c.fleet_percentile || 0));
+        bars.innerHTML = `
+            <div style="font-size:0.8rem;color:#444;margin-bottom:6px;">
+                Fleet hazard percentile &nbsp;·&nbsp;
+                <span style="color:#888;font-style:italic;">healthier engines on the left, more at-risk on the right</span>
+            </div>
+            <div style="position:relative;height:38px;">
+                <!-- Full gradient bar (always visible across 0-100) -->
+                <div style="position:absolute;top:18px;left:0;right:0;height:14px;
+                            border-radius:4px;
+                            background:linear-gradient(90deg,#28a745 0%,#28a745 25%,#b8860b 50%,#d97706 75%,#dc3545 100%);
+                            border:1px solid #ccc;"></div>
+                <!-- Triangle marker for this engine, pointing down onto the gradient -->
+                <div style="position:absolute;left:calc(${pct}% - 8px);top:0;">
+                    <div style="width:0;height:0;
+                                border-left:8px solid transparent;
+                                border-right:8px solid transparent;
+                                border-top:10px solid #1f3a68;"></div>
+                    <div style="position:absolute;top:-18px;left:-12px;
+                                background:#1f3a68;color:#fff;font-size:0.72rem;
+                                padding:2px 6px;border-radius:3px;font-weight:bold;
+                                white-space:nowrap;">P${pct}</div>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin-top:2px;">
+                <span>0 — lowest risk</span>
+                <span>25</span>
+                <span>50 — fleet median</span>
+                <span>75</span>
+                <span>100 — highest risk</span>
+            </div>
+        `;
+
+        // Trend history (server-supplied if available)
+        if (c.history && c.history.length > 1) {
+            hist.style.display = "block";
+            const rows = c.history.map((h, i) => {
+                const arrow = i === c.history.length - 1 ? "🟢 current" : "";
+                return `<div>#${i+1}: LP ${h.linear_predictor >= 0 ? "+" : ""}${h.linear_predictor.toFixed(3)} · P${h.fleet_percentile} ${arrow}</div>`;
+            }).join("");
+            histLst.innerHTML = rows;
+        } else {
+            hist.style.display = "none";
+        }
+
+        note.textContent = c.note || "";
     }
 
     function renderDegradation(d) {

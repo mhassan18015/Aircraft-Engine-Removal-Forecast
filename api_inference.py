@@ -59,6 +59,26 @@ try:
 except FileNotFoundError:
     ENGINE_EXPECTED_MAX = {}
 
+# Cox-PH survival-risk scoring (May-2026): load fitted coefficients and fleet
+# hazard distribution from cox_ph_results.json so /predict can return a survival
+# hazard score alongside the LSTM RCL forecast and the RF degradation severity.
+# Slopes are computed on the uploaded 40-flight window vs flight_cycle (TAKEOFF
+# phase only — the slopes used at training time).
+_COX_PATH = "cox_ph_results.json"
+COX_COEFS: dict | None = None        # raw coefficients: {covariate: float}
+COX_COVARIATES: list[str] = []       # ordered list of slope covariate names
+COX_FLEET_HAZARDS: list[float] = []  # sorted ascending; for percentile lookup
+COX_C_INDEX: float | None = None
+try:
+    _cox = _json.loads(open(_COX_PATH).read())
+    if "coefficients" in _cox and "fleet_hazard_distribution" in _cox:
+        COX_COEFS = {k: float(v) for k, v in _cox["coefficients"].items()}
+        COX_COVARIATES = list(_cox.get("covariates_used", list(COX_COEFS.keys())))
+        COX_FLEET_HAZARDS = sorted(float(v) for v in _cox["fleet_hazard_distribution"])
+        COX_C_INDEX = float(_cox.get("concordance_index", 0.0))
+except FileNotFoundError:
+    pass
+
 # Input feature scaler (May-2026): Lstm_PM_py.ipynb cell 7 fits a MinMaxScaler
 # on the 21 input features and persists its bounds to input_scaler.json. The
 # models were trained on inputs in [0, 1], so the API must apply the same
@@ -82,6 +102,49 @@ except FileNotFoundError:
     pass  # API will run with raw inputs; CNN may misbehave (see comment above).
 
 _RESIDUAL_RANGE = RESIDUAL_MAX - RESIDUAL_MIN
+
+# Per-engine prediction log — captures Cox-PH linear predictor over time so the
+# frontend can show a trend across successive uploads for the same engine.
+# Keyed by eng_number. Persisted to prediction_log.json so trends survive restarts.
+# Bounded to MAX_HISTORY entries per engine.
+_PRED_LOG_PATH = "prediction_log.json"
+MAX_HISTORY = 20
+import threading as _threading
+_pred_log_lock = _threading.Lock()
+try:
+    _prediction_log = _json.loads(open(_PRED_LOG_PATH).read())
+except (FileNotFoundError, _json.JSONDecodeError):
+    _prediction_log = {}  # {eng_number: [ {linear_predictor, hazard_score, fleet_percentile, ts}, ... ]}
+
+def _log_cox_prediction(eng_number: str | None, cox_result: dict | None) -> list[dict]:
+    """Append this prediction to the per-engine history and return the recent trail.
+
+    Returns the engine's most-recent MAX_HISTORY entries (including the new one).
+    No-op if eng_number is None or cox_result isn't available.
+    """
+    if not eng_number or cox_result is None or not cox_result.get("available"):
+        return []
+    import datetime as _dt
+    entry = {
+        "ts": _dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "linear_predictor": cox_result.get("linear_predictor"),
+        "hazard_score":     cox_result.get("hazard_score"),
+        "fleet_percentile": cox_result.get("fleet_percentile"),
+        "risk_bucket":      cox_result.get("risk_bucket"),
+    }
+    with _pred_log_lock:
+        hist = _prediction_log.setdefault(eng_number, [])
+        hist.append(entry)
+        # Drop oldest if over cap
+        if len(hist) > MAX_HISTORY:
+            del hist[: len(hist) - MAX_HISTORY]
+        try:
+            with open(_PRED_LOG_PATH, "w") as f:
+                _json.dump(_prediction_log, f, indent=2)
+        except OSError:
+            pass  # logging is best-effort; don't fail inference if disk is read-only
+        return list(hist)
+
 
 def _inverse_scale_residual(scaled: float) -> float:
     """Inverse-transform a [0, 1] model output back to cycles."""
@@ -438,6 +501,61 @@ async def get_schema():
     }
 
 
+def _compute_cox_hazard(flights_data: list[dict]) -> dict | None:
+    """Compute a Cox-PH survival hazard score + fleet percentile for the window.
+
+    Uses MEAN of *_norm sensor columns over the TAKEOFF rows in the 40-flight
+    window — same feature definition the model was fit on (cell 22 of
+    Lstm_PM_py.ipynb), so the percentile-against-fleet calibrates correctly.
+    """
+    if COX_COEFS is None or not COX_FLEET_HAZARDS:
+        return None
+    takeoff_rows = [r for r in flights_data if int(r.get("flight_phase_TAKEOFF", 0)) == 1]
+    if len(takeoff_rows) < 10:
+        return {"available": False, "reason": f"only {len(takeoff_rows)} TAKEOFF rows in window (need ≥10)"}
+
+    # Map covariate name to the underlying *_norm column.
+    # Covariates are e.g. "egt_probe_average_norm_mean" → column "egt_probe_average_norm".
+    feature_values = {}
+    for cov in COX_COVARIATES:
+        if not cov.endswith("_mean"):
+            continue
+        col = cov[:-len("_mean")]
+        vals = [float(r[col]) for r in takeoff_rows if col in r and r[col] is not None]
+        if not vals:
+            return {"available": False, "reason": f"missing column '{col}' in request"}
+        feature_values[cov] = float(np.mean(vals))
+
+    # Linear predictor + hazard score
+    lp = sum(COX_COEFS[k] * feature_values[k] for k in feature_values if k in COX_COEFS)
+    hazard = float(np.exp(lp))
+
+    # Calibrated fleet percentile (training and inference use same feature definition now)
+    n = len(COX_FLEET_HAZARDS)
+    rank = sum(1 for h in COX_FLEET_HAZARDS if h <= hazard)
+    pct = round(100.0 * rank / n, 1) if n else None
+
+    bucket = ("high"     if pct is not None and pct >= 75 else
+              "elevated" if pct is not None and pct >= 50 else
+              "moderate" if pct is not None and pct >= 25 else
+              "low")
+
+    return {
+        "available": True,
+        "hazard_score": round(hazard, 4),
+        "linear_predictor": round(lp, 4),
+        "fleet_percentile": pct,
+        "risk_bucket": bucket,
+        "feature_values": {k: round(v, 5) for k, v in feature_values.items()},
+        "model_c_index": COX_C_INDEX,
+        "note": (
+            "Hazard score = exp(sum(coef_i * mean_norm_i)) from Cox-PH fit on "
+            f"mean *_norm features over 40-flight window (C-index {COX_C_INDEX:.3f}). "
+            f"Fleet percentile is calibrated against {n} engines using the same window."
+        ),
+    }
+
+
 def _request_to_tensor(req: PredictionRequest) -> tuple[np.ndarray, int, list[dict]]:
     """Turn a PredictionRequest into (X, latest_flight_cycle, raw_flight_dicts).
 
@@ -498,6 +616,12 @@ async def predict(req: PredictionRequest):
             req.eng_number, req.expected_max_cycle, latest_cycle
         )
         degradation = _compute_degradation(raw_flights)
+        cox_hazard = _compute_cox_hazard(raw_flights)
+        # Append to per-engine trend log; attach the trail back onto the response
+        if cox_hazard and cox_hazard.get("available"):
+            history = _log_cox_prediction(req.eng_number, cox_hazard)
+            if history:
+                cox_hazard["history"] = history
 
         if req.model_choice == "average":
             residuals = {name: _predict_residual(m, X) for name, m in models.items()}
@@ -529,6 +653,7 @@ async def predict(req: PredictionRequest):
             "residual": residual,
             "per_model_residuals": residuals,
             "degradation": degradation,
+            "cox_ph": cox_hazard,
             "warnings": warnings,
         }
     except ValueError as ve:
