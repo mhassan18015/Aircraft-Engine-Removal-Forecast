@@ -1,6 +1,6 @@
 # A320neo Engine RCL Forecast — System Flowcharts
 
-Six diagrams covering every layer of the pipeline. All rendered with Mermaid;
+Seven diagrams covering every layer of the pipeline. All rendered with Mermaid;
 view in GitHub, VS Code (Mermaid Preview extension), or any modern markdown viewer.
 
 1. [System Overview](#1-system-overview)
@@ -9,6 +9,7 @@ view in GitHub, VS Code (Mermaid Preview extension), or any modern markdown view
 4. [Inference Request Lifecycle](#4-inference-request-lifecycle)
 5. [Retrain DAG (Airflow + Drift Gate)](#5-retrain-dag-airflow--drift-gate)
 6. [Test Suite Coverage](#6-test-suite-coverage)
+7. [Model Taxonomy](#7-model-taxonomy)
 
 ---
 
@@ -350,6 +351,82 @@ flowchart LR
     A3 --> R
     A4 --> R
 ```
+
+---
+
+## 7. Model Taxonomy
+
+Every model that lives in the app, grouped by task and ML category. Three production deliverables (RCL forecast, degradation severity, survival risk) plus a transparent arithmetic baseline that's always reported alongside the forecast.
+
+```mermaid
+flowchart TB
+    classDef root      fill:#1f3a68,stroke:#000,color:#fff,font-weight:bold
+    classDef task      fill:#fff3d6,stroke:#b8860b,color:#000,font-weight:bold
+    classDef seq       fill:#e8f3ff,stroke:#007BFF,color:#000
+    classDef tree      fill:#e6f6ec,stroke:#28a745,color:#000
+    classDef rule      fill:#fdf2e9,stroke:#d97706,color:#000
+    classDef survival  fill:#f0e6ff,stroke:#6f42c1,color:#000
+    classDef baseline  fill:#f5f5f5,stroke:#666,color:#000,font-style:italic
+    classDef archived  fill:#eeeeee,stroke:#aaa,color:#777
+
+    Root["App models<br/>(production stack)"]:::root
+
+    %% Four operational tasks
+    T1["RCL forecast<br/>(regression)"]:::task
+    T2["Degradation severity<br/>(4-class classification)"]:::task
+    T3["Survival risk<br/>(time-to-event)"]:::task
+    T4["Baseline reference<br/>(arithmetic, no fit)"]:::task
+
+    Root --> T1
+    Root --> T2
+    Root --> T3
+    Root --> T4
+
+    %% RCL ensemble (4 sequence models)
+    M1["BiLSTM (primary)<br/>92K params<br/>best_lstm2_model.keras"]:::seq
+    M2["GRU<br/>28K params<br/>best_gru_model.keras"]:::seq
+    M3["1D CNN<br/>32K params<br/>best_cnn_model.keras"]:::seq
+    M4["BiLSTM full-data<br/>production retrain<br/>best_lstm2_model_all.keras"]:::seq
+
+    T1 --> M1
+    T1 --> M2
+    T1 --> M3
+    T1 --> M4
+
+    %% Degradation models (RF + rule cross-check)
+    M5["Random Forest<br/>300 estimators, depth 14<br/>99.9% CV (engine-grouped 5-fold)<br/>degradation_rf.pkl"]:::tree
+    M6["Percentile rule<br/>fleet thresholds P25/P50/P75/P90<br/>degradation_thresholds.json"]:::rule
+
+    T2 --> M5
+    T2 --> M6
+    M5 -.cross-check.- M6
+
+    %% Survival (Cox + KM in same JSON)
+    M7["Cox proportional hazards<br/>5 mean *_norm covariates<br/>C-index 0.761 (window-calibrated)<br/>cox_ph_results.json"]:::survival
+    M8["Kaplan-Meier<br/>non-parametric S t<br/>cox_ph_results.json"]:::survival
+
+    T3 --> M7
+    T3 --> M8
+
+    %% Baseline
+    M9["FLEET_MAX_LIFE − flight_cycle<br/>hand-coded in api_inference._engine_baseline<br/>always reported in /predict response"]:::baseline
+    T4 --> M9
+
+    %% Archived (not served)
+    Arch["XGBoost (archived)<br/>best_xgb_model.onnx"]:::archived
+    T1 -.- Arch
+```
+
+**Legend**
+
+- 🟦 Sequence / deep-learning regression — averaged at serving time (`model_choice="average"`)
+- 🟩 Tree ensemble classifier — 4-class severity output
+- 🟧 Rule-based classifier — cross-checks the RF for interpretability ("agrees with rule" flag in `/predict`)
+- 🟪 Survival models — Cox-PH for hazard ranking, KM for empirical fleet survival curve
+- ⬜ Baseline arithmetic — included in every prediction response so users see how much the model is adding
+- 🔘 Archived — kept in the repo for reproducibility but not loaded by the API
+
+**What `/predict` calls on every request:** baseline arithmetic + BiLSTM/GRU/CNN ensemble + Random Forest + percentile rule + Cox-PH. All five run in series in ~25-40 ms total on CPU.
 
 ---
 
