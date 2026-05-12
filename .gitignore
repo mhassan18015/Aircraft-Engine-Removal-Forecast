@@ -91,5 +91,6 @@ _cell*_out.png
 desktop.ini
 prediction_log.json
 
-# --- Presentation deck (deck is a personal delivery artifact, not source code) ---
+# --- Personal delivery artifacts (deck + writeups are not source code) ---
 A320NEO_ERF_RCL_Presentation.pptx
+*.docx
