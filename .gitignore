@@ -90,3 +90,6 @@ _cell*_out.png
 # --- OS junk ---
 desktop.ini
 prediction_log.json
+
+# --- Presentation deck (deck is a personal delivery artifact, not source code) ---
+A320NEO_ERF_RCL_Presentation.pptx
