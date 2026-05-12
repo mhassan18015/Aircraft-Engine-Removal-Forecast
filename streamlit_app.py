@@ -12,11 +12,19 @@ from __future__ import annotations
 
 import io
 import math
+import os
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+# Bundled sample CSVs — surfaced in the UI as one-click "Try sample data" buttons.
+# Paths are relative to streamlit_app.py and only shown if the file is present.
+SAMPLE_FILES: dict[str, str] = {
+    "ESN17 — 40 takeoff flights": "sample_input_ESN17_takeoff_40.csv",
+    "Generic 40-flight sample":   "sample_input_40_flights.csv",
+}
 
 st.set_page_config(
     page_title="Aircraft Engine RCL Forecast",
@@ -515,15 +523,57 @@ predict_btn = st.button(
     disabled=(uploaded is None) or (not schema_ok),
 )
 
+# "Try sample data" — bundled CSVs auto-load + predict in one click. Only renders
+# the entries whose file is present in the deployed image (some samples are
+# gitignored and may not ship). Each row has a "Run prediction" button and a
+# "Download" button so users can inspect the CSV format.
+available_samples = {label: path for label, path in SAMPLE_FILES.items() if os.path.exists(path)}
+if available_samples:
+    with st.expander("Or try a bundled sample (no upload needed)", expanded=False):
+        for label, path in available_samples.items():
+            cols = st.columns([3, 1])
+            cols[0].markdown(f"**{label}**  \n`{path}`")
+            if cols[0].button(
+                f"Run prediction with {label}",
+                key=f"sample_btn_{path}",
+                disabled=not schema_ok,
+            ):
+                st.session_state["pending_sample"] = path
+            try:
+                with open(path, "rb") as fh:
+                    cols[1].download_button(
+                        "Download CSV",
+                        data=fh.read(),
+                        file_name=os.path.basename(path),
+                        mime="text/csv",
+                        key=f"sample_dl_{path}",
+                        width="stretch",
+                    )
+            except OSError:
+                cols[1].caption("(unavailable)")
+
+# Decide what to predict on: explicit upload + Predict button takes priority;
+# otherwise fall back to whichever sample button the user just clicked.
+input_source: Any = None
+input_label: str | None = None
 if predict_btn and uploaded is not None:
+    input_source = uploaded
+    input_label = f"uploaded file: {uploaded.name}"
+else:
+    pending = st.session_state.pop("pending_sample", None)
+    if pending:
+        input_source = pending
+        input_label = f"bundled sample: {pending}"
+
+if input_source is not None:
     try:
-        flights, eng_number = _parse_uploaded_csv(uploaded)
+        flights, eng_number = _parse_uploaded_csv(input_source)
     except Exception as e:
-        st.error(f"Failed to parse CSV: {e}")
+        st.error(f"Failed to parse CSV ({input_label}): {e}")
         st.stop()
 
     if eng_number:
-        st.info(f"Engine detected from CSV: **{eng_number}**")
+        st.info(f"Engine detected from CSV: **{eng_number}** &nbsp;·&nbsp; source: {input_label}")
 
     with st.spinner("Running inference…"):
         try:
@@ -541,6 +591,7 @@ if predict_btn and uploaded is not None:
             "request": {
                 "model_choice": model_choice,
                 "eng_number": eng_number,
+                "input_source": input_label,
                 "flights": f"[{len(flights)} rows omitted for brevity]",
             },
             "response": body,

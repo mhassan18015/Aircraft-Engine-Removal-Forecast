@@ -81,6 +81,10 @@ A320NEO_ERF_RCL_Presentation_v[0-9][0-9].pptx
 
 # --- Sample inputs (regeneratable) ---
 sample_input_*.csv
+# ...except the two bundled with the Streamlit deployment so the deployed
+# app can offer "Try sample data" one-click predictions.
+!sample_input_ESN17_takeoff_40.csv
+!sample_input_40_flights.csv
 _cell*_out.png
 
 # --- OS junk ---
