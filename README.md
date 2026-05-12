@@ -119,7 +119,6 @@ A320NEO_ERF_RCL/
 |-- index.html                             CSV-upload frontend (port 8000)
 |-- start_servers.py                       launches both servers
 |-- Run local host.bat                     Windows one-click launcher
-|-- Dockerfile                             packages FastAPI as :8000
 |-- prometheus.yml                         metrics scrape config
 |-- data_drift.py                          Evidently 0.7+ drift detector
 |-- retrain_dag.py                         Airflow weekly drift-gated retrain DAG
@@ -212,7 +211,6 @@ pytest test_data_drift.py -v              # 6 drift detection tests
 - **Airflow (`retrain_dag.py`):** weekly DAG with three tasks - `check_drift_and_retrain` (calls `data_drift.check_data_drift()` against an env-controlled current-data CSV; runs `train_pipeline.py` only if drift is detected), `register_model` (promotes each `.keras` to its own MLflow Model Registry name), `notify` (logs a summary line, ready for Slack/email).
 - **Drift detection (`data_drift.py`):** Evidently 0.7+ `DataDriftPreset` over the 6 core sensors. Returns True when more than 50% of sensors drift on the K-S test (configurable via `DRIFT_SHARE_THRESHOLD`).
 - **Prometheus:** `prometheus.yml` scrapes the FastAPI on port 8000 every 15s. Add a `/metrics` endpoint via `prometheus-fastapi-instrumentator` to feed it.
-- **Docker:** `Dockerfile` builds a slim Python 3.10 image, installs `requirements.txt`, exposes 8000, and runs `uvicorn api_inference:app`.
 
 
 ## Next-generation direction — borescope-finding progression

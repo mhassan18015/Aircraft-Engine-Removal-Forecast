@@ -336,7 +336,7 @@ flowchart LR
         A1["api_inference.py<br/>FlightRow schema, /health, /schema,<br/>/predict × 4 model_choices,<br/>shape mismatch handling, /metrics"]:::target
         A2["data_drift.py<br/>two-arg form, zero-arg DAG form,<br/>edge cases (None/empty/disjoint)"]:::target
         A3["train_pipeline.py<br/>side-effect-free import,<br/>SKIP_TRAINING=1 path,<br/>marker file written"]:::target
-        A4["Dockerfile + .dockerignore<br/>+ prometheus.yml + requirements.txt"]:::target
+        A4["prometheus.yml + requirements.txt"]:::target
     end
 
     R[("pytest -v<br/>29 passed in ~50s")]:::pass
