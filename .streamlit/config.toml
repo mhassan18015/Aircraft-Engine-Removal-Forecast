@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 50          # MB — generous headroom for 40-flight CSVs
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#007BFF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F7FA"
+textColor = "#222222"
