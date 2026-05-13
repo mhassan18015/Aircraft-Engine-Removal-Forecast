@@ -22,8 +22,14 @@ import streamlit as st
 # Bundled sample CSVs — surfaced in the UI as one-click "Try sample data" buttons.
 # Paths are relative to streamlit_app.py and only shown if the file is present.
 SAMPLE_FILES: dict[str, str] = {
-    "ESN17 — 40 takeoff flights": "sample_input_ESN17_takeoff_40.csv",
-    "Generic 40-flight sample":   "sample_input_40_flights.csv",
+    # Matched-cycle pair — both engines at ~4965 flight_cycle (same arithmetic RCL ≈ 35
+    # cycles), but Cox-PH ranks them 67 percentile-points apart.  Upload them in turn to
+    # demonstrate that the model adds value beyond cycle-counter arithmetic.
+    "ESN20 — matched-cycle pair, LOW risk (Cox-PH P6.2)":      "sample_input_ESN20_takeoff_40.csv",
+    "ESN6  — matched-cycle pair, ELEVATED risk (Cox-PH P72.9)": "sample_input_ESN6_takeoff_40.csv",
+    # Additional standalone samples for general testing
+    "ESN17 — 40 takeoff flights":                              "sample_input_ESN17_takeoff_40.csv",
+    "Generic 40-flight sample":                                "sample_input_40_flights.csv",
 }
 
 st.set_page_config(

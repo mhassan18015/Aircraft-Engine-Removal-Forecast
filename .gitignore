@@ -85,6 +85,8 @@ sample_input_*.csv
 # app can offer "Try sample data" one-click predictions.
 !sample_input_ESN17_takeoff_40.csv
 !sample_input_40_flights.csv
+!sample_input_ESN20_takeoff_40.csv
+!sample_input_ESN6_takeoff_40.csv
 _cell*_out.png
 
 # --- OS junk ---
