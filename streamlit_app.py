@@ -234,6 +234,7 @@ def _run_prediction(
         "per_model_residuals": residuals,
         "degradation": degradation,
         "cox_ph": cox_hazard,
+        "latest_flight_cycle": int(latest_cycle),
         "warnings": warnings,
     }
 
@@ -473,6 +474,96 @@ def _render_cox(c: dict[str, Any] | None) -> None:
         st.caption(c["note"])
 
 
+def _km_survival_at(cycle: int, points: list[tuple[int, float]]) -> float | None:
+    """Step-function lookup of fleet S(t). KM is right-continuous: S stays at
+    S(t_prev) until the next observed event, so for `cycle` between sampled
+    points we return the latest S that is ≤ cycle. Before the first sample we
+    return 1.0 (no events observed yet)."""
+    if not points:
+        return None
+    if cycle < points[0][0]:
+        return 1.0
+    s = points[0][1]
+    for t, v in points:
+        if t <= cycle:
+            s = v
+        else:
+            break
+    return s
+
+
+def _render_km(latest_cycle: int | None) -> None:
+    points = getattr(api, "COX_KM_OVERALL", []) or []
+    if not points or latest_cycle is None:
+        return
+    import altair as alt
+
+    df = pd.DataFrame(points, columns=["cycle", "S"])
+    s_now = _km_survival_at(int(latest_cycle), points)
+
+    y_min = min(0.85, float(df["S"].min()) - 0.02)
+    x_max = max(int(df["cycle"].max()), int(latest_cycle)) + 200
+
+    curve = (
+        alt.Chart(df)
+        .mark_line(interpolate="step-after", strokeWidth=2.5, color="#1f3a68")
+        .encode(
+            x=alt.X("cycle:Q", title="flight_cycle",
+                    scale=alt.Scale(domain=[0, x_max])),
+            y=alt.Y("S:Q", title="S(t) — fleet survival",
+                    scale=alt.Scale(domain=[y_min, 1.005])),
+        )
+    )
+    dots = (
+        alt.Chart(df)
+        .mark_circle(size=55, color="#1f3a68")
+        .encode(
+            x="cycle:Q", y="S:Q",
+            tooltip=[alt.Tooltip("cycle:Q", title="cycle"),
+                     alt.Tooltip("S:Q", title="S(t)", format=".3f")],
+        )
+    )
+    marker_df = pd.DataFrame({"cycle": [int(latest_cycle)], "S": [s_now]})
+    vrule = (
+        alt.Chart(marker_df)
+        .mark_rule(strokeDash=[4, 3], color="#dc3545", strokeWidth=1.5)
+        .encode(x="cycle:Q")
+    )
+    here = (
+        alt.Chart(marker_df)
+        .mark_point(size=140, color="#dc3545", filled=True, shape="diamond")
+        .encode(
+            x="cycle:Q", y="S:Q",
+            tooltip=[alt.Tooltip("cycle:Q", title="this engine cycle"),
+                     alt.Tooltip("S:Q", title="S(t) here", format=".3f")],
+        )
+    )
+
+    st.markdown(
+        f"""
+        <div style="margin-top:14px;padding:14px 16px 6px;background:#f7fbff;
+                    border-left:4px solid #1f3a68;border-radius:6px;">
+          <h4 style="margin:0 0 4px;font-size:1rem;color:#222;">
+            Fleet survival curve <span style="font-weight:normal;color:#666;">(Kaplan-Meier)</span>
+          </h4>
+          <div style="font-size:0.88rem;color:#555;">
+            This engine at cycle <b>{int(latest_cycle)}</b> &nbsp;·&nbsp;
+            Fleet S(t) ≈ <b>{s_now:.3f}</b>
+            &nbsp;<span style="color:#888;">({(s_now*100):.1f}% of fleet engines survive past this age)</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.altair_chart((curve + dots + vrule + here).properties(height=220),
+                    width="stretch")
+    st.caption(
+        "Non-parametric fleet baseline from 13 effective removal events across "
+        "48 engines. Step plot — S(t) only drops at observed events. The red "
+        "diamond marks where this engine currently sits on the curve."
+    )
+
+
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
@@ -591,6 +682,7 @@ if input_source is not None:
     _render_result(body)
     _render_degradation(body.get("degradation"))
     _render_cox(body.get("cox_ph"))
+    _render_km(body.get("latest_flight_cycle"))
 
     with st.expander("Show raw request / response"):
         st.json({

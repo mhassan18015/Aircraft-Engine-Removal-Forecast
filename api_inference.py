@@ -69,6 +69,10 @@ COX_COEFS: dict | None = None        # raw coefficients: {covariate: float}
 COX_COVARIATES: list[str] = []       # ordered list of slope covariate names
 COX_FLEET_HAZARDS: list[float] = []  # sorted ascending; for percentile lookup
 COX_C_INDEX: float | None = None
+# Fleet-wide Kaplan-Meier survival curve. Stored as list[(cycle, S)] sorted by
+# cycle so the UI can render a step plot and look up S(t) for an engine's
+# current flight_cycle. Keys in the JSON are "S_<cycle>" (e.g. "S_4500": 0.94).
+COX_KM_OVERALL: list[tuple[int, float]] = []
 try:
     _cox = _json.loads(open(_COX_PATH).read())
     if "coefficients" in _cox and "fleet_hazard_distribution" in _cox:
@@ -76,6 +80,16 @@ try:
         COX_COVARIATES = list(_cox.get("covariates_used", list(COX_COEFS.keys())))
         COX_FLEET_HAZARDS = sorted(float(v) for v in _cox["fleet_hazard_distribution"])
         COX_C_INDEX = float(_cox.get("concordance_index", 0.0))
+    _km = _cox.get("kaplan_meier_overall") or {}
+    _km_points = []
+    for k, v in _km.items():
+        if not k.startswith("S_"):
+            continue
+        try:
+            _km_points.append((int(k[2:]), float(v)))
+        except (ValueError, TypeError):
+            continue
+    COX_KM_OVERALL = sorted(_km_points)
 except FileNotFoundError:
     pass
 
